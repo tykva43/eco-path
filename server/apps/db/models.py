@@ -16,16 +16,16 @@ class Point(models.Model):
 
 class Measure(models.Model):
     date = models.DateTimeField(verbose_name='Дата и время измерения')
-    temp = models.FloatField(verbose_name='Температура')
-    wet = models.FloatField(verbose_name='Влажность')
-    CO2 = models.FloatField(verbose_name='Содержания CO2')
-    LOS = models.FloatField(verbose_name='Значение ЛОС')
-    dust_pm_1 = models.FloatField(verbose_name='Значение пыли pm 1.0')
-    dust_pm_2_5 = models.FloatField(verbose_name='Значение пыли pm 2.5')
-    dust_pm_10 = models.FloatField(verbose_name='Значение пыли pm 10')
-    pressure = models.FloatField(verbose_name='Давление')
-    AQI = models.FloatField(verbose_name='Значение AQI')
-    formaldehyde = models.FloatField(verbose_name='Формальдегид')
+    temp = models.FloatField(verbose_name='Температура', null=True, blank=True)
+    wet = models.FloatField(verbose_name='Влажность', null=True, blank=True)
+    CO2 = models.FloatField(verbose_name='Содержания CO2', null=True, blank=True)
+    LOS = models.FloatField(verbose_name='Значение ЛОС', null=True, blank=True)
+    dust_pm_1 = models.FloatField(verbose_name='Значение пыли pm 1.0', null=True, blank=True)
+    dust_pm_2_5 = models.FloatField(verbose_name='Значение пыли pm 2.5', null=True, blank=True)
+    dust_pm_10 = models.FloatField(verbose_name='Значение пыли pm 10', null=True, blank=True)
+    pressure = models.FloatField(verbose_name='Давление', null=True, blank=True)
+    AQI = models.FloatField(verbose_name='Значение AQI', null=True, blank=True)
+    formaldehyde = models.FloatField(verbose_name='Формальдегид', null=True, blank=True)
     point = models.ForeignKey(to="Point", on_delete=models.CASCADE, verbose_name="Координаты")
 
     def __str__(self):
