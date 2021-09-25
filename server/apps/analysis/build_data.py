@@ -8,7 +8,7 @@ from apps.db.business_logic import PointWrapper, MeasureWrapper
 from rest_framework import status
 from rest_framework.response import Response
 
-from .config import ORIGIN_DATA_PATH_CSV
+from .config import ORIGIN_DATA_PATH_CSV, ALL_MEASURE_FILENAME
 
 
 def get_coordinates_by_address(address):
@@ -27,56 +27,55 @@ def get_coordinates_by_address(address):
 
 def collect_from_dir(dir_path=ORIGIN_DATA_PATH_CSV):
     file_list = os.listdir(dir_path)
+    i = 0
     for filename in file_list:
-        df = pd.read_csv(dir_path+filename, header=0, names=['date', 'temp', 'wet', 'CO2', 'LOS', 'dust_pm_1',
-                                                             'dust_pm_2_5', 'dust_pm_10', 'pressure',
-                                                             'AQI', 'formaldehyde'], index_col=False)
+        print(filename)
+        chunksize = 10 ** 6
         street = filename[:filename.find('_')]
-        house = filename[filename.find('_')+1:filename.find('.')]
-
+        house = filename[filename.find('_') + 1:filename.find('.')]
         lat, lon = get_coordinates_by_address('Москва ' + street + ' ' + house)
-        PointWrapper.save({'lat': lat, 'lon': lon})
-        df['lat'] = lat
-        df['lon'] = lon
-        l = [df.loc[i, ~df.columns.str.contains('^Unnamed')].to_dict() for i in range(len(df))]
-        MeasureWrapper.bulk_create(l)
-    return file_list
+        for chunk in pd.read_csv(dir_path + filename, chunksize=chunksize, header=0,
+                                 names=['date', 'temp', 'wet', 'CO2',
+                                        'LOS', 'dust_pm_1',
+                                        'dust_pm_2_5', 'dust_pm_10', 'pressure',
+                                        'AQI', 'formaldehyde']):
+            chunk['lat'] = lat
+            chunk['lon'] = lon
+            if not i:
+                # l = [chunk.iloc[i].to_dict() for i in range(len(chunk))]
+                # MeasureWrapper.bulk_create(l)
+                chunk.to_csv(dir_path + ALL_MEASURE_FILENAME)
+                i = 1
+            else:
+                chunk.to_csv(dir_path + ALL_MEASURE_FILENAME, header=None, mode='a')
+        # df['lat'] = lat
+        # df['lon'] = lon
+
+        # l = (df.loc[i, ~df.columns.str.contains('^Unnamed')].to_dict() for i in range(len(df)))
+        # MeasureWrapper.bulk_create(l)
+        # print('*********** bulk_created')
+    print('************ready**************')
+
+
+def collect_points(dir_path=ORIGIN_DATA_PATH_CSV):
+    file_list = os.listdir(dir_path)
+    points_list = []
+    for filename in file_list:
+        street = filename[:filename.find('_')]
+        house = filename[filename.find('_') + 1:filename.find('.')]
+        lat, lon = get_coordinates_by_address('Москва ' + street + ' ' + house)
+        points_list.append({'lat': lat, 'lon': lon})
+        print(filename)
+    print('saved all points')
+    PointWrapper.bulk_create(points_list)
+
+
+def import_points_to_db(request):
+    PointWrapper.clear()
+    collect_points()
 
 
 def import_data_to_db(request):
-    PointWrapper.clear()
     MeasureWrapper.clear()
     collect_from_dir()
     return Response(status=status.HTTP_200_OK)
-
-
-def collect_from_file(filename):
-    ...
-    # curl "https://graphhopper.com/api/1/geocode?q=berlin&locale=de&debug=true&key=api_key"
-    # l = []
-    # for i in range(len(df)):
-    #     l.append(df.loc[i, ~df.columns.str.contains('^Unnamed')].to_dict())
-    # return l
-
-# def import_data_to_db():
-#     df = pd.read_csv(PREPARED_FILEPATH)
-#     PointWrapper.bulk_save(df_to_list(df))
-
-
-# def recreate_data(request):
-#     generate_random_data()
-#     PointWrapper.clear_all()
-#     import_data_to_db()
-#     return JsonResponse({'info': 'ready'})
-
-
-# def create_db(request):
-#     PeopleTypeWrapper.save({'requirements': [1, 2, 3], 'name': 'Слабовидящий человек'})
-#     PeopleTypeWrapper.save({'requirements': [1, 3, 5], 'name': 'Передвижение на коляске'})
-#     # PeopleTypeWrapper.save({'requirements': [1, 3, 4, 2, 5], 'name': 'Другое'})
-#     DisabilityRequirementWrapper.save({'name': 'Пандусы/пониженные бордюры'})
-#     DisabilityRequirementWrapper.save({'name': 'Остановки общественного транспорта'})
-#     DisabilityRequirementWrapper.save({'name': 'Твердое дорожное покрытие'})
-#     DisabilityRequirementWrapper.save({'name': 'Светофор со звуковым сигналом'})
-#     DisabilityRequirementWrapper.save({'name': 'Ширина тротуара не менее 1м'})
-#     return JsonResponse({'info': 'ready'})

@@ -1,5 +1,5 @@
 import json
-import math
+import random
 import requests
 
 from django.http import QueryDict
@@ -15,7 +15,7 @@ class PointView(APIView):
         queryset = Point.objects.all().values()
         all_points = {'type': 'FeatureCollection',
                       'features': [{'type': 'Feature',
-                                    'properties': {},
+                                    'properties': {'value': random.random()},
                                     'geometry': {
                                         'type': 'Point',
                                         'coordinates': [point['lon'], point['lat']]
@@ -28,6 +28,7 @@ class RouterBuilder(APIView):
         data = request.data
         # preprocess points data
         data = QueryDict.dict(data)
+        print(data)
         if type(data['point_to']) == str:
             data['point_to'] = list(map(float, data['point_to'].split(',')))
         elif type(data['point_to']) == list:
@@ -47,17 +48,6 @@ class RouterBuilder(APIView):
         # print('accepted_list', accepted_list)
         # block_area = PointWrapper.get_restricted_areas(restricted_list)
         headers = {'Authorizations': 'e4c820ba-37c0-4801-9bba-3b559cea39ab', 'content-type': 'application/json'}
-        # print(data['point_from'])
-        # params = {
-        #     'point': ','.join(map(str, data['point_from'])),
-        #           'point': ','.join(map(str, data['point_to'])),
-        #     #       'point': data['point_from'],
-        #     #       'point': data['point_to'],
-        #           "vehicle": "foot",
-        #           'calc_points': True,
-        #           'locale': 'ru',
-        #           'key': 'e4c820ba-37c0-4801-9bba-3b559cea39ab',
-        #           }
         post_body = {
             'points': [data['point_from'], data['point_to']],
             "profile": profile,
@@ -66,19 +56,11 @@ class RouterBuilder(APIView):
             'ch.disable': True,
             # 'block_area': block_area
         }
-        # response = requests.post(url='https://graphhopper.com/api/1//route?point={},{}&point={},{}&vehicle=foot&calc_points=true&locale=ru&key=e4c820ba-37c0-4801-9bba-3b559cea39ab'.format(data['point_from'][1], data['point_from'][0], data['point_to'][1], data['point_to'][0]), headers=headers)
         response = requests.post(url='https://graphhopper.com/api/1//route?key=e4c820ba-37c0-4801-9bba-3b559cea39ab',
                                  headers=headers, data=json.dumps(post_body))
-        # print(response.json())
-        # print(response.url)
-        # post_data = {'name': 'Gladys'}
-        # response = requests.post('http://example.com', data=post_data)
-        # content = response.content
-
-        # print(restricted_list)
 
         return Response(response.json(), status=status.HTTP_200_OK)
 
-    def get_restricted(self, points):
-        points = PointWrapper.find_in_rect(points['point_from'], points['point_to'])
-        return points
+    # def get_restricted(self, points):
+    #     points = PointWrapper.find_in_rect(points['point_from'], points['point_to'])
+    #     return points

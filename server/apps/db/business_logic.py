@@ -51,9 +51,9 @@ class MeasureWrapper:
         return measure
 
     @staticmethod
-    def bulk_create(data, batch_size=1000):
-        for i in range(0, len(data), batch_size):
-            batch = [Measure(
+    def bulk_create(data):
+        print('batch started')
+        batch = (Measure(
                 point=PointWrapper.find_by_coords(b['lat'], b['lon']),
                 date=b['date'],
                 temp=b['temp'],
@@ -66,9 +66,10 @@ class MeasureWrapper:
                 pressure=b['pressure'],
                 AQI=b['AQI'],
                 formaldehyde=b['formaldehyde']
-            )
-                for b in data[i:i + batch_size]]
-            Measure.objects.bulk_create(batch)
+        )
+                for b in data)
+        Measure.objects.bulk_create(batch)
+        print('batch  completed')
 
     @staticmethod
     def clear():
