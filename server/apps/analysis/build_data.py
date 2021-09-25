@@ -2,12 +2,13 @@ import os
 
 import pandas as pd
 
-import random
-
 import requests
 
 from apps.db.business_logic import PointWrapper, MeasureWrapper
-from .config import PREPARED_PATH, ORIGIN_DATA_PATH
+from rest_framework import status
+from rest_framework.response import Response
+
+from .config import ORIGIN_DATA_PATH_CSV
 
 
 def get_coordinates_by_address(address):
@@ -20,33 +21,33 @@ def get_coordinates_by_address(address):
     }
     response = requests.get(url=url, params=params)
     response = response.json()
-    point_data = response['data']['hits'][0]['point']
+    point_data = response['hits'][0]['point']
     return point_data['lat'], point_data['lng']
 
 
-def collect_from_dir(req, dir_path=ORIGIN_DATA_PATH):
+def collect_from_dir(dir_path=ORIGIN_DATA_PATH_CSV):
     file_list = os.listdir(dir_path)
     for filename in file_list:
-        print('Box ' + filename[:filename.find('.')])
-        df = pd.read_excel(dir_path + filename, header=None, engine='openpyxl')
-        # df = pd.read_excel(dir_path + filename, header=None, sheet_name='Box ' + filename[:filename.find('.')], index_col=None)
-        address = filename[:filename.find('_')]
+        df = pd.read_csv(dir_path+filename, header=0, names=['date', 'temp', 'wet', 'CO2', 'LOS', 'dust_pm_1',
+                                                             'dust_pm_2_5', 'dust_pm_10', 'pressure',
+                                                             'AQI', 'formaldehyde'], index_col=False)
+        street = filename[:filename.find('_')]
+        house = filename[filename.find('_')+1:filename.find('.')]
 
-        print(df.head())
-        lat, lon = get_coordinates_by_address('Москва ' + address)
+        lat, lon = get_coordinates_by_address('Москва ' + street + ' ' + house)
         PointWrapper.save({'lat': lat, 'lon': lon})
-        df.loc[df, 'lat'] = lat
-        df.loc[df, 'lon'] = lon
-        MeasureWrapper.bulk_update(df.loc[df, ~df.columns.str.contains('^Unnamed')].to_dict())
+        df['lat'] = lat
+        df['lon'] = lon
+        l = [df.loc[i, ~df.columns.str.contains('^Unnamed')].to_dict() for i in range(len(df))]
+        MeasureWrapper.bulk_create(l)
     return file_list
 
-    # df = pd.read_csv(ORIGIN_DATA_FILEPATH)
-    #
-    # for i in range(len(df)):
-    #     df.loc[i, 'point_type'] = 'П'
-    #     df.loc[i, 'characteristics'] = ','.join(map(str, random.sample(SAMPLE_CHOICES, random.randint(0, 5))))
-    # print(df.head())
-    # df.to_csv(PREPARED_FILEPATH)
+
+def import_data_to_db(request):
+    PointWrapper.clear()
+    MeasureWrapper.clear()
+    collect_from_dir()
+    return Response(status=status.HTTP_200_OK)
 
 
 def collect_from_file(filename):

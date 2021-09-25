@@ -7,51 +7,20 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.db.models import Measure
+from apps.db.models import Measure, Point
 
 
-# class PointView(APIView):
-#     def get(self, request):
-#         if request.GET:
-#             data = QueryDict.dict(request.GET)
-#             queryset = Point.objects.all()
-#             accepted_list, restricted_list = PointWrapper.filter_by_chars(queryset, data['user_config'])
-#             features = []
-#             for e in accepted_list:
-#                 features.append(
-#                     {'type': 'Feature',
-#                      'properties': {'characteristics': [] if math.isnan(e['characteristics'][0])
-#                      else map(int, e['characteristics']), 'is_accepted': True},
-#                      'geometry': {
-#                          'type': 'Point',
-#                          'coordinates': [e['lon'], e['lat']]
-#                      }}
-#                 )
-#             for e in restricted_list:
-#                 features.append(
-#                     {'type': 'Feature',
-#                      'properties': {'characteristics': [] if math.isnan(e['characteristics'][0])
-#                      else map(int, e['characteristics']), 'is_accepted': False},
-#                      'geometry': {
-#                          'type': 'Point',
-#                          'coordinates': [e['lon'], e['lat']]
-#                      }}
-#                 )
-#             all_points = {'type': 'FeatureCollection',
-#                           'features': features}
-#             return Response(all_points)
-#
-#         else:
-#             queryset = Point.objects.all().values()
-#             all_points = {'type': 'FeatureCollection',
-#                           'features': [{'type': 'Feature',
-#                                         'properties': {'characteristics': [] if math.isnan(point['characteristics'][0])
-#                                         else map(int, point['characteristics'])},
-#                                         'geometry': {
-#                                             'type': 'Point',
-#                                             'coordinates': [point['lon'], point['lat']]
-#                                         }} for point in queryset]}
-#             return Response(all_points)
+class PointView(APIView):
+    def get(self, request):
+        queryset = Point.objects.all().values()
+        all_points = {'type': 'FeatureCollection',
+                      'features': [{'type': 'Feature',
+                                    'properties': {},
+                                    'geometry': {
+                                        'type': 'Point',
+                                        'coordinates': [point['lon'], point['lat']]
+                                    }} for point in queryset]}
+        return Response(all_points)
 
 
 class RouterBuilder(APIView):

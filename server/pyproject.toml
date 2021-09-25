@@ -20,6 +20,7 @@ requests = "^2.26.0"
 utm = "^0.7.0"
 xlrd = "^2.0.1"
 openpyxl = "^3.0.9"
+OleFileIO_PL = "^0.42.1"
 
 [tool.poetry.dev-dependencies]
 django-debug-toolbar = "3.2"

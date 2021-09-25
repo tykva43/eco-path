@@ -24,13 +24,17 @@ class PointWrapper:
         point = Point.objects.filter(lat=lat, lon=lon).first()
         return point
 
+    @staticmethod
+    def clear():
+        Point.objects.all().delete()
+
 
 class MeasureWrapper:
     @staticmethod
     def save(data):
         point = PointWrapper.find_by_coords(data['lat'], data['lon'])
         measure = Measure(
-            point__id=point.id,
+            point=point,
             date=data['date'],
             temp=data['temp'],
             wet=data['wet'],
@@ -46,6 +50,29 @@ class MeasureWrapper:
         measure.save()
         return measure
 
+    @staticmethod
+    def bulk_create(data, batch_size=1000):
+        for i in range(0, len(data), batch_size):
+            batch = [Measure(
+                point=PointWrapper.find_by_coords(b['lat'], b['lon']),
+                date=b['date'],
+                temp=b['temp'],
+                wet=b['wet'],
+                CO2=b['CO2'],
+                LOS=b['LOS'],
+                dust_pm_1=b['dust_pm_1'],
+                dust_pm_2_5=b['dust_pm_2_5'],
+                dust_pm_10=b['dust_pm_10'],
+                pressure=b['pressure'],
+                AQI=b['AQI'],
+                formaldehyde=b['formaldehyde']
+            )
+                for b in data[i:i + batch_size]]
+            Measure.objects.bulk_create(batch)
+
+    @staticmethod
+    def clear():
+        Measure.objects.all().delete()
 
 # class MeasureWrapper:
 #     @staticmethod
