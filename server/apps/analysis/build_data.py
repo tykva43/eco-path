@@ -42,18 +42,10 @@ def collect_from_dir(dir_path=ORIGIN_DATA_PATH_CSV):
             chunk['lat'] = lat
             chunk['lon'] = lon
             if not i:
-                # l = [chunk.iloc[i].to_dict() for i in range(len(chunk))]
-                # MeasureWrapper.bulk_create(l)
                 chunk.to_csv(dir_path + ALL_MEASURE_FILENAME)
                 i = 1
             else:
                 chunk.to_csv(dir_path + ALL_MEASURE_FILENAME, header=None, mode='a')
-        # df['lat'] = lat
-        # df['lon'] = lon
-
-        # l = (df.loc[i, ~df.columns.str.contains('^Unnamed')].to_dict() for i in range(len(df)))
-        # MeasureWrapper.bulk_create(l)
-        # print('*********** bulk_created')
     print('************ready**************')
 
 

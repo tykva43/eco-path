@@ -4,6 +4,7 @@ from django.db import models
 class Point(models.Model):
     lat = models.FloatField(verbose_name='Широта')
     lon = models.FloatField(verbose_name='Долгота')
+    value = models.FloatField(verbose_name='Значение ИЗА', default=0.0)
 
     def __str__(self):
         return "{}, {}".format(str(self.lat), str(self.lon))
